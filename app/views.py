@@ -5,10 +5,13 @@ Werkzeug Documentation:  https://werkzeug.palletsprojects.com/
 This file contains the routes for your application.
 """
 
-from app import app
-from flask import render_template, request, redirect, url_for
-
-
+import os
+import locale
+from app import app, db
+from flask import render_template, request, redirect, url_for, flash, send_from_directory
+from app.forms import PropertyForm 
+from app.models import Property
+from werkzeug.utils import secure_filename
 ###
 # Routing for your application.
 ###
@@ -22,7 +25,54 @@ def home():
 @app.route('/about/')
 def about():
     """Render the website's about page."""
-    return render_template('about.html', name="Mary Jane")
+    return render_template('about.html', name="Callay Jarrett")
+
+@app.route('/properties')
+def properties():
+    """Render the website's properties page."""
+    properties = db.session.execute(db.select(Property)).scalar()
+
+    return render_template('properties.html', properties = properties)
+
+@app.route('/properties/create', methods=['POST','GET'])
+def create_properties():
+    """Render the Flask-WTF to add new property page"""
+    form = PropertyForm()
+
+    if request.method == 'GET':
+        return render_template('create_properties.html', form=form)
+    
+    if request.method == 'POST':
+         if form.validate_on_submit:
+             file = request.files['photo']
+             secured = secure_filename['photo']
+             file.save(os.path.join(app.config['UPLOAD_FOLDER'], secured))
+             if file and secured != "":
+                 addproperty = Property(request.form['title'],request.form['bedrooms'], request.form['bathrooms'], request.form['location'], request.form['price'],request.form['type'], request.form['description'],  secured)
+                 db.session.add(addproperty)
+                 db.session.commit()
+                 flash("Your Property has been added successfully")
+                 return redirect(url_for('properties'))   
+    
+    return render_template('create_properties.html',form=form)
+
+@app.route('/properties/<propertyid>')
+def view_property(propertyid):
+    # code to retrieve the property information from the database
+    # return the property information to the template
+     property_info = Property.query.filter(Property.id==propertyid).all()[0]
+     
+     if property.numberofrooms > 1:
+        bedroomlabel = 'Bedrooms'
+     else:
+        bedroomlabel = 'Bedroom'
+
+     if property.numberofbathrooms > 1:
+        bathroomlabel ='Bathrooms'
+     else:
+        bathroomlabel ='Bathroom'
+
+     return render_template('property.html', singleproperty=property_info,bathlabel = bathroomlabel, bedlabel = bedroomlabel, loc=locale )
 
 
 ###

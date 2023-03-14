@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block css %}
+<link rel="stylesheet" href="{{url_for('static', filename='css/app.css')}}" />
+{% endblock %}
+
+ {% block main %}
+<h2>Properties </h2>
+
+<section id="propertyset"> 
+    {% for property in propertylist: %}
+    <div class="card">
+        <img class="card-img-top" src='{{ url_for("get_image", filename=property.photo)}}' alt="Property image"/>
+        <div class="card-body"> 
+          <h5 class="card-title">{{property.title}}</h5>
+         <span><img class="locationimg" src="{{url_for('static', filename='images/location.png')}}"/> {{property.location}} </span>
+         <span class="price"> {{loc.currency(property.price, grouping= True)}} </span>
+        </div>
+        <a href="{{url_for('view_property', propertyid = property.id)}}" class="cardbtn"> View Property </a>
+      </div>
+    {% endfor %}
+</section>
+
+ {% endblock %}
