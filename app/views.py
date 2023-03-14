@@ -12,6 +12,8 @@ from flask import render_template, request, redirect, url_for, flash, send_from_
 from app.forms import PropertyForm 
 from app.models import Property
 from werkzeug.utils import secure_filename
+locale.setlocale( locale.LC_ALL, 'en_CA.UTF-8' )
+
 ###
 # Routing for your application.
 ###
@@ -30,9 +32,9 @@ def about():
 @app.route('/properties')
 def properties():
     """Render the website's properties page."""
-    properties = db.session.execute(db.select(Property)).scalar()
+    properties = Property.query.all()
 
-    return render_template('properties.html', properties = properties)
+    return render_template('properties.html', propertylist = properties, loc =locale)
 
 @app.route('/properties/create', methods=['POST','GET'])
 def create_properties():
@@ -45,7 +47,7 @@ def create_properties():
     if request.method == 'POST':
          if form.validate_on_submit:
              file = request.files['photo']
-             secured = secure_filename['photo']
+             secured = secure_filename(file.filename)
              file.save(os.path.join(app.config['UPLOAD_FOLDER'], secured))
              if file and secured != "":
                  addproperty = Property(request.form['title'],request.form['bedrooms'], request.form['bathrooms'], request.form['location'], request.form['price'],request.form['type'], request.form['description'],  secured)
@@ -62,12 +64,12 @@ def view_property(propertyid):
     # return the property information to the template
      property_info = Property.query.filter(Property.id==propertyid).all()[0]
      
-     if property.numberofrooms > 1:
+     if len(property_info.bedrooms) > 1:
         bedroomlabel = 'Bedrooms'
      else:
         bedroomlabel = 'Bedroom'
 
-     if property.numberofbathrooms > 1:
+     if len(property_info.bathrooms) > 1:
         bathroomlabel ='Bathrooms'
      else:
         bathroomlabel ='Bathroom'
@@ -94,6 +96,9 @@ def send_text_file(file_name):
     file_dot_text = file_name + '.txt'
     return app.send_static_file(file_dot_text)
 
+@app.route('/uploads/<filename>')
+def get_image(filename):
+    return send_from_directory(os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER']), filename)
 
 @app.after_request
 def add_header(response):
